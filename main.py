@@ -89,7 +89,7 @@ def gen_key(q):
     return key
 
 
-def encrypt(msg, p, k, alpha, beta):
+def encrypt(msg):
     en_msg = []
     y1 = binhPhuongVaNhan(alpha, k, p)
     j = binhPhuongVaNhan(beta, k, p)
@@ -103,8 +103,37 @@ def encrypt(msg, p, k, alpha, beta):
         encry_msg+=chr(en_msg[i]%p)
     return encry_msg
 
+def maHoa(msg, p, k, a, alpha):
+    en_msg = []
+    y1 = binhPhuongVaNhan(alpha, k, p)
+    t=ocolitMoRong(p-1, k)
+    while(t<=0):
+        t+=p-1
+    for i in range(0, len(msg)):
+        y2=(((ord(msg[i])-a*y1)%(p-1))*t)%(p-1)
+        en_msg.append(y2)
+    encry_msg = ""
+    for i in range(0, len(en_msg)):
+        encry_msg += chr(en_msg[i])
+    return encry_msg
 
-def decrypt(en_msg, p, a):
+def kiemTra(msg, y2):
+    if(len(msg)!=len(y2)):
+        print('No equal')
+        return False
+    y3=[]
+    for i in range(0, len(y2)):
+        y3.append(ord(y2[i]))
+    isOk=True
+    for i in range(0, len(y2)):
+        check=((binhPhuongVaNhan(beta, y1, p))*(binhPhuongVaNhan(y1, y3[i], p)))%p
+        if(check!=binhPhuongVaNhan(alpha, ord(msg[i]), p)):
+            isOk=False
+            break
+    return isOk
+
+def decrypt(en_msg):
+    en_msg=en_msg.strip()
     dr_msg = []
     for i in range(0, len(en_msg)):
         dr_msg.append(ord(en_msg[i]))
@@ -115,19 +144,44 @@ def decrypt(en_msg, p, a):
         banRo+=c
     return banRo
 
-p =  random.randint(10000, 50000)#p 29
+p =  random.randint(10000, 50000)
 while(isPrime(p)==False):
     p = random.randint(10000, 50000)
-alpha = random.randint(1, p-1)#alpha 7
-a = gen_key(p)  #a
-beta = binhPhuongVaNhan(alpha, a, p)  #beta
+alpha = random.randint(1, p-1)
+a = random.randint(2, p-2)
+beta = binhPhuongVaNhan(alpha, a, p)
 k=random.randint(1, p-2)
 while(gcd(k, p-1)!=1):
    k = random.randint(1, p - 2)
+y1=0
 
 def signFromInput():
     textOutputLeft.delete('1.0', 'end')
-    textOutputLeft.insert('1.0', encrypt(textInputLeft.get('1.0', 'end'), p, k, alpha, beta))
+    x=encrypt(textInputLeft.get('1.0', 'end'))
+    textOutputLeft.insert('1.0', x)
+    if(decrypt(x)==textInputLeft.get('1.0', 'end')):
+        print('YES')
+    else:
+        print('NO')
+
+def handleChange():
+    contentOfInputText=textInputLeft.get('1.0', 'end').strip()
+    contentOfOutputText=textOutputLeft.get('1.0', 'end').strip()
+    textInputLeft.delete('1.0', 'end')
+    textOutputLeft.delete('1.0', 'end')
+    checkInputFirst.delete('1.0', 'end')
+    checkInputFirst.insert('1.0', contentOfInputText)
+    fileTextInputSecond.delete('1.0', 'end')
+    fileTextInputSecond.insert('1.0', contentOfOutputText)
+
+def checkSignature():
+    banRo=checkInputFirst.get('1.0', 'end').strip()
+    banMa=fileTextInputSecond.get('1.0', 'end').strip()
+    notifyOutput.delete('1.0', 'end')
+    if(str(decrypt(banMa.strip()))==str(banRo)):
+        notifyOutput.insert('1.0', 'Chữ ký Đúng!!!')
+    else:
+        notifyOutput.insert('1.0', 'Chữ ký Sai!!!')
 
 root = tk.Tk()
 root.iconbitmap('./icon.ico')
@@ -164,7 +218,7 @@ signal.grid(row=2, column=0, sticky=tk.W)
 textOutputLeft=tk.Text(leftSide, height=7, width=50)
 textOutputLeft.grid(row=2, column=1)
 textOutputLeft.insert('1.0', "Say o ha ra")
-changeButton=tk.Button(leftSide, text='Chuyển', bg='blue', fg='white', width=15, height=3)
+changeButton=tk.Button(leftSide, text='Chuyển', bg='blue', fg='white', width=15, height=3, command=handleChange)
 changeButton.grid(row=2, column=2, sticky=tk.N)
 saveButton=tk.Button(leftSide, text='Lưu', bg='blue', fg='white', width=15, height=3)
 saveButton.grid(row=2, column=2, sticky=tk.S)
@@ -187,7 +241,7 @@ fileTextInputSecond.grid(row=1, column=1, pady=30)
 fileSignalButton=tk.Button(rightSide, text='File chữ ký', bg='blue', fg='white',width=15, height=3)
 fileSignalButton.grid(row=1, column=2)
 
-checkSignal=tk.Button(rightSide, text='Kiểm tra chữ ký', bg='blue', fg='white',width=15, height=3)
+checkSignal=tk.Button(rightSide, text='Kiểm tra chữ ký', bg='blue', fg='white',width=15, height=3, command=checkSignature)
 checkSignal.grid(row=2, column=1, pady=30)
 
 notifyLabel=ttk.Label(rightSide, text='Thông báo:')
