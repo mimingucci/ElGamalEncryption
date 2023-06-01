@@ -1,9 +1,40 @@
+import encodings
 import math
 import tkinter as tk
 from tkinter import ttk
 import random
-from math import pow
+from tkinter import filedialog as fd
+import os.path
+import chardet
+from tkinter.messagebox import showinfo
 
+def select_file(target):
+    filetypes = (
+        ('text files', '*.txt'),
+        ('word files', '*.docx')
+    )
+
+    filename = fd.askopenfilename(
+        title='Open a file',
+        initialdir='C:/Users/gtvvu/Downloads/',
+        filetypes=filetypes)
+
+    f=open(filename, 'r', encoding='utf-8', errors='ignore')
+    data=f.read()
+    target.delete('1.0', 'end')
+    target.insert('1.0', data)
+    f.close()
+
+
+
+def save_file():
+    if(os.path.isfile('C:/Users/gtvvu/Downloads/chuky.txt')==False):
+       saved_file=open('C:/Users/gtvvu/Downloads/chuky.txt', 'x', encoding='utf-8')
+    else:
+       saved_file = open('C:/Users/gtvvu/Downloads/chuky.txt', 'w', encoding='utf-8')
+    data = str(textOutputLeft.get('1.0', 'end')).strip()
+    saved_file.write(data)
+    saved_file.close()
 
 def gcd(a, b):
   if b == 0:
@@ -12,17 +43,17 @@ def gcd(a, b):
 
 def isPrime(n):
     if (n <= 1) :
-      return False;
+      return False
     if (n <= 3):
-      return True;
+      return True
     if (n%2 == 0 or n%3 == 0):
-      return False;
+      return False
 
     for i in range(5, int(math.sqrt(n)), 6):
         if (n%i == 0 or n%(i+2) == 0):
-           return False;
+           return False
 
-    return True;
+    return True
 
 
 def gcdExtended(a, b):
@@ -159,10 +190,6 @@ def signFromInput():
     textOutputLeft.delete('1.0', 'end')
     x=encrypt(textInputLeft.get('1.0', 'end'))
     textOutputLeft.insert('1.0', x)
-    if(decrypt(x)==textInputLeft.get('1.0', 'end')):
-        print('YES')
-    else:
-        print('NO')
 
 def handleChange():
     contentOfInputText=textInputLeft.get('1.0', 'end').strip()
@@ -178,16 +205,25 @@ def checkSignature():
     banRo=checkInputFirst.get('1.0', 'end').strip()
     banMa=fileTextInputSecond.get('1.0', 'end').strip()
     notifyOutput.delete('1.0', 'end')
-    if(str(decrypt(banMa.strip()))==str(banRo)):
-        notifyOutput.insert('1.0', 'Chữ ký Đúng!!!')
+    isOk=True
+    de_msg=str(decrypt(banMa)).strip()
+    if len(de_msg)==len(banRo):
+      for i in range(0, len(de_msg)):
+        if(de_msg[i]!=banRo[i]):
+            isOk=False
+            break
     else:
-        notifyOutput.insert('1.0', 'Chữ ký Sai!!!')
+        isOk=False
+    if(isOk):
+        notifyOutput.insert('1.0', 'Chữ ký Đúng')
+    else:
+        notifyOutput.insert('1.0', 'Chữ ký Sai')
+    print(de_msg.encode('utf-8'))
 
 root = tk.Tk()
 root.iconbitmap('./icon.ico')
 root.title('El Gammal')
 root.geometry('700x500+50+50')
-
 
 label=tk.Frame(root)
 label.columnconfigure(0, weight=1)
@@ -207,7 +243,7 @@ vanbanky.grid(row=0, column=0, sticky=tk.W)
 textInputLeft=tk.Text(leftSide, height=7, width=50)
 textInputLeft.grid(row=0, column=1, pady=30)
 textInputLeft.insert('1.0', "Say o ha ra")
-fileInput=tk.Button(leftSide, text='File', bg='blue', fg='white', width=15, height=3)
+fileInput=tk.Button(leftSide, text='File', bg='blue', fg='white', width=15, height=3, command=lambda: select_file(textInputLeft))
 fileInput.grid(row=0, column=2)
 
 signButton=tk.Button(leftSide, text='Ký', bg='blue', fg='white', width=15, height=3, command=signFromInput)
@@ -220,7 +256,7 @@ textOutputLeft.grid(row=2, column=1)
 textOutputLeft.insert('1.0', "Say o ha ra")
 changeButton=tk.Button(leftSide, text='Chuyển', bg='blue', fg='white', width=15, height=3, command=handleChange)
 changeButton.grid(row=2, column=2, sticky=tk.N)
-saveButton=tk.Button(leftSide, text='Lưu', bg='blue', fg='white', width=15, height=3)
+saveButton=tk.Button(leftSide, text='Lưu', bg='blue', fg='white', width=15, height=3, command=save_file)
 saveButton.grid(row=2, column=2, sticky=tk.S)
 #define right side
 rightSide=ttk.Frame(root)
@@ -231,14 +267,14 @@ vanbankyLabel=ttk.Label(rightSide, text='Văn bản ký:')
 vanbankyLabel.grid(row=0, column=0, sticky='w')
 checkInputFirst=tk.Text(rightSide, height=7, width=50)
 checkInputFirst.grid(row=0, column=1, pady=30)
-fileTextButton=tk.Button(rightSide, text='File văn bản', bg='blue', fg='white',width=15, height=3)
+fileTextButton=tk.Button(rightSide, text='File văn bản', bg='blue', fg='white',width=15, height=3, command=lambda: select_file(checkInputFirst))
 fileTextButton.grid(row=0, column=2)
 
 checkSignalLabel=ttk.Label(rightSide, text='Chữ ký:')
 checkSignalLabel.grid(row=1, column=0, sticky='w')
 fileTextInputSecond=tk.Text(rightSide, height=7, width=50)
 fileTextInputSecond.grid(row=1, column=1, pady=30)
-fileSignalButton=tk.Button(rightSide, text='File chữ ký', bg='blue', fg='white',width=15, height=3)
+fileSignalButton=tk.Button(rightSide, text='File chữ ký', bg='blue', fg='white',width=15, height=3, command=lambda: select_file(fileTextInputSecond))
 fileSignalButton.grid(row=1, column=2)
 
 checkSignal=tk.Button(rightSide, text='Kiểm tra chữ ký', bg='blue', fg='white',width=15, height=3, command=checkSignature)
@@ -255,15 +291,6 @@ rightSide.pack(ipadx=20, ipady=20, fill=tk.BOTH, expand=True, side=tk.RIGHT)
 
 
 def main():
-   # p =  random.randint(10000, 50000)#p 29
-   # while(isPrime(p)==False):
-   #     p = random.randint(10000, 50000)
-   # alpha = random.randint(1, p-1)#alpha 7
-   # a = gen_key(p)  #a
-   # beta = binhPhuongVaNhan(alpha, a, p)  #beta
-   # k=random.randint(1, p-2)
-   # while(gcd(k, p-1)!=1):
-   #     k = random.randint(1, p - 2)
    root.mainloop()
 
 if __name__ == '__main__':
