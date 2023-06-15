@@ -119,12 +119,52 @@ def gen_key(q):
 
     return key
 
+def set_up():
+    global p, alpha, a, beta, k, en_msg, y1
+    p = random.randint(10000, 50000)
+    while (isPrime(p) == False):
+        p = random.randint(10000, 50000)
+    alpha = random.randint(1, p - 1)
+    a = random.randint(2, p - 2)
+    beta = binhPhuongVaNhan(alpha, a, p)
+    k = random.randint(1, p - 2)
+    while (gcd(k, p - 1) != 1):
+        k = random.randint(1, p - 2)
+    en_msg = []
+    y1 = binhPhuongVaNhan(alpha, k, p)
+
+def maHoa(msg):
+    en_msg.clear()
+    t=ocolitMoRong(p-1, k)
+    for i in range(0, len(msg)):
+            tmp=ord(msg[i])%(p-1)-a*y1%(p-1)
+            while tmp<0:
+                tmp+=(p-1)
+            y2=tmp*t%(p-1)
+            en_msg.append(y2)
+    encry_msg = ""
+    for i in range(0, len(en_msg)-1):
+            encry_msg += chr(en_msg[i])
+    return encry_msg
+
+def kiemTra(msg, y2):
+    if(len(msg)!=len(y2)):
+        return False
+    y3=[]
+    for i in range(0, len(y2)):
+            y3.append(ord(y2[i]))
+    isOk=True
+    for i in range(0, len(y3)):
+            check=((binhPhuongVaNhan(beta, y1, p))*(binhPhuongVaNhan(y1, y3[i], p)))%p
+            if(check!=binhPhuongVaNhan(alpha, ord(msg[i]), p)):
+               isOk=False
+               break
+    return isOk
 
 def encrypt(msg):
     en_msg = []
     y1 = binhPhuongVaNhan(alpha, k, p)
     j = binhPhuongVaNhan(beta, k, p)
-
     for i in range(0, len(msg)):
         en_msg.append(y1)
         y2=(ord(msg[i])*j)%p
@@ -133,35 +173,6 @@ def encrypt(msg):
     for i in range(0, len(en_msg)):
         encry_msg+=chr(en_msg[i]%p)
     return encry_msg
-
-def maHoa(msg, p, k, a, alpha):
-    en_msg = []
-    y1 = binhPhuongVaNhan(alpha, k, p)
-    t=ocolitMoRong(p-1, k)
-    while(t<=0):
-        t+=p-1
-    for i in range(0, len(msg)):
-        y2=(((ord(msg[i])-a*y1)%(p-1))*t)%(p-1)
-        en_msg.append(y2)
-    encry_msg = ""
-    for i in range(0, len(en_msg)):
-        encry_msg += chr(en_msg[i])
-    return encry_msg
-
-def kiemTra(msg, y2):
-    if(len(msg)!=len(y2)):
-        print('No equal')
-        return False
-    y3=[]
-    for i in range(0, len(y2)):
-        y3.append(ord(y2[i]))
-    isOk=True
-    for i in range(0, len(y2)):
-        check=((binhPhuongVaNhan(beta, y1, p))*(binhPhuongVaNhan(y1, y3[i], p)))%p
-        if(check!=binhPhuongVaNhan(alpha, ord(msg[i]), p)):
-            isOk=False
-            break
-    return isOk
 
 def decrypt(en_msg):
     en_msg=en_msg.strip()
@@ -175,20 +186,10 @@ def decrypt(en_msg):
         banRo+=c
     return banRo
 
-p =  random.randint(10000, 50000)
-while(isPrime(p)==False):
-    p = random.randint(10000, 50000)
-alpha = random.randint(1, p-1)
-a = random.randint(2, p-2)
-beta = binhPhuongVaNhan(alpha, a, p)
-k=random.randint(1, p-2)
-while(gcd(k, p-1)!=1):
-   k = random.randint(1, p - 2)
-y1=0
 
 def signFromInput():
     textOutputLeft.delete('1.0', 'end')
-    x=encrypt(textInputLeft.get('1.0', 'end'))
+    x=maHoa(textInputLeft.get('1.0', 'end'))
     textOutputLeft.insert('1.0', x)
 
 def handleChange():
@@ -205,20 +206,20 @@ def checkSignature():
     banRo=checkInputFirst.get('1.0', 'end').strip()
     banMa=fileTextInputSecond.get('1.0', 'end').strip()
     notifyOutput.delete('1.0', 'end')
-    isOk=True
-    de_msg=str(decrypt(banMa)).strip()
-    if len(de_msg)==len(banRo):
-      for i in range(0, len(de_msg)):
-        if(de_msg[i]!=banRo[i]):
-            isOk=False
-            break
-    else:
-        isOk=False
+    isOk=kiemTra(banRo, banMa)
+    # isOk=True
+    # de_msg=str(decrypt(banMa)).strip()
+    # if len(de_msg)==len(banRo):
+    #   for i in range(0, len(de_msg)):
+    #     if(de_msg[i]!=banRo[i]):
+    #         isOk=False
+    #         break
+    # else:
+    #     isOk=False
     if(isOk):
         notifyOutput.insert('1.0', 'Chữ ký Đúng')
     else:
         notifyOutput.insert('1.0', 'Chữ ký Sai')
-    print(de_msg.encode('utf-8'))
 
 root = tk.Tk()
 root.iconbitmap('./icon.ico')
@@ -242,7 +243,7 @@ vanbanky=ttk.Label(leftSide, text='Văn bản ký:')
 vanbanky.grid(row=0, column=0, sticky=tk.W)
 textInputLeft=tk.Text(leftSide, height=7, width=50)
 textInputLeft.grid(row=0, column=1, pady=30)
-textInputLeft.insert('1.0', "Say o ha ra")
+# textInputLeft.insert('1.0', "Say o ha ra")
 fileInput=tk.Button(leftSide, text='File', bg='blue', fg='white', width=15, height=3, command=lambda: select_file(textInputLeft))
 fileInput.grid(row=0, column=2)
 
@@ -253,7 +254,7 @@ signal=ttk.Label(leftSide, text='Chữ ký:')
 signal.grid(row=2, column=0, sticky=tk.W)
 textOutputLeft=tk.Text(leftSide, height=7, width=50)
 textOutputLeft.grid(row=2, column=1)
-textOutputLeft.insert('1.0', "Say o ha ra")
+# textOutputLeft.insert('1.0', "Say o ha ra")
 changeButton=tk.Button(leftSide, text='Chuyển', bg='blue', fg='white', width=15, height=3, command=handleChange)
 changeButton.grid(row=2, column=2, sticky=tk.N)
 saveButton=tk.Button(leftSide, text='Lưu', bg='blue', fg='white', width=15, height=3, command=save_file)
@@ -291,6 +292,7 @@ rightSide.pack(ipadx=20, ipady=20, fill=tk.BOTH, expand=True, side=tk.RIGHT)
 
 
 def main():
+   set_up()
    root.mainloop()
 
 if __name__ == '__main__':
