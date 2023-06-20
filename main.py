@@ -1,12 +1,9 @@
-import encodings
 import math
 import tkinter as tk
 from tkinter import ttk
 import random
 from tkinter import filedialog as fd
 import os.path
-import chardet
-from tkinter.messagebox import showinfo
 
 def select_file(target):
     filetypes = (
@@ -56,18 +53,6 @@ def isPrime(n):
     return True
 
 
-def gcdExtended(a, b):
-    if a == 0:
-        return b, 0, 1
-
-    gcd, x1, y1 = gcdExtended(b % a, a)
-
-
-    x = y1 - (b // a) * x1
-    y = x1
-
-    return gcd, x, y
-
 def binhPhuongVaNhan(a, b, c):
     s=format(b, 'b')
     p=1;
@@ -112,15 +97,9 @@ def ocolitMoRong(ri, ri1):
         t[i] = t[i - 2] - q[i - 1] * t[i - 1]
         return t[i] if t[i]>0 else (n+t[i])
 
-def gen_key(q):
-    key = random.randint(2, q-2)
-    while gcd(q, key) != 1:
-        key = random.randint(2, q - 2)
-
-    return key
 
 def set_up():
-    global p, alpha, a, beta, k, en_msg, y1
+    global p, alpha, a, beta, k, en_msg, y1, doc
     p = random.randint(10000, 50000)
     while (isPrime(p) == False):
         p = random.randint(10000, 50000)
@@ -133,7 +112,7 @@ def set_up():
     en_msg = []
     y1 = binhPhuongVaNhan(alpha, k, p)
 
-def maHoa(msg):
+def sign(msg):
     en_msg.clear()
     t=ocolitMoRong(p-1, k)
     for i in range(0, len(msg)):
@@ -144,52 +123,30 @@ def maHoa(msg):
             en_msg.append(y2)
     encry_msg = ""
     for i in range(0, len(en_msg)-1):
-            encry_msg += chr(en_msg[i])
+            encry_msg+=hex(en_msg[i])
     return encry_msg
 
-def kiemTra(msg, y2):
-    if(len(msg)!=len(y2)):
+def check(msg, y2):
+    y3=y2.split("0x")
+    while (len(y3)>0 and y3[0]==''):
+        y3.pop(0)
+    while (len(y3)>0 and y3[len(y3)-1]==0):
+        y3.pop(len(y3)-1)
+    if(len(y3)!=len(msg)):
         return False
-    y3=[]
-    for i in range(0, len(y2)):
-            y3.append(ord(y2[i]))
     isOk=True
     for i in range(0, len(y3)):
-            check=((binhPhuongVaNhan(beta, y1, p))*(binhPhuongVaNhan(y1, y3[i], p)))%p
+            tmp=int(y3[i], 16)
+            check=((binhPhuongVaNhan(beta, y1, p))*(binhPhuongVaNhan(y1, tmp, p)))%p
             if(check!=binhPhuongVaNhan(alpha, ord(msg[i]), p)):
                isOk=False
                break
     return isOk
 
-def encrypt(msg):
-    en_msg = []
-    y1 = binhPhuongVaNhan(alpha, k, p)
-    j = binhPhuongVaNhan(beta, k, p)
-    for i in range(0, len(msg)):
-        en_msg.append(y1)
-        y2=(ord(msg[i])*j)%p
-        en_msg.append(y2)
-    encry_msg=""
-    for i in range(0, len(en_msg)):
-        encry_msg+=chr(en_msg[i]%p)
-    return encry_msg
-
-def decrypt(en_msg):
-    en_msg=en_msg.strip()
-    dr_msg = []
-    for i in range(0, len(en_msg)):
-        dr_msg.append(ord(en_msg[i]))
-    k=binhPhuongVaNhan(dr_msg[0], a, p)
-    banRo=""
-    for i in range(1, len(dr_msg), 2):
-        c=chr((dr_msg[i]*ocolitMoRong(p, k))%p)
-        banRo+=c
-    return banRo
-
 
 def signFromInput():
     textOutputLeft.delete('1.0', 'end')
-    x=maHoa(textInputLeft.get('1.0', 'end'))
+    x=sign(textInputLeft.get('1.0', 'end'))
     textOutputLeft.insert('1.0', x)
 
 def handleChange():
@@ -206,16 +163,7 @@ def checkSignature():
     banRo=checkInputFirst.get('1.0', 'end').strip()
     banMa=fileTextInputSecond.get('1.0', 'end').strip()
     notifyOutput.delete('1.0', 'end')
-    isOk=kiemTra(banRo, banMa)
-    # isOk=True
-    # de_msg=str(decrypt(banMa)).strip()
-    # if len(de_msg)==len(banRo):
-    #   for i in range(0, len(de_msg)):
-    #     if(de_msg[i]!=banRo[i]):
-    #         isOk=False
-    #         break
-    # else:
-    #     isOk=False
+    isOk=check(banRo, banMa)
     if(isOk):
         notifyOutput.insert('1.0', 'Chữ ký Đúng')
     else:
@@ -288,7 +236,6 @@ notifyOutput.grid(row=3, column=1)
 
 leftSide.pack(ipadx=20, ipady=20, fill=tk.BOTH, expand=True, side=tk.LEFT)
 rightSide.pack(ipadx=20, ipady=20, fill=tk.BOTH, expand=True, side=tk.RIGHT)
-
 
 
 def main():
