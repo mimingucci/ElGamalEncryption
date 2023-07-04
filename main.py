@@ -4,6 +4,7 @@ from tkinter import ttk
 import random
 from tkinter import filedialog as fd
 import os.path
+import hashlib
 
 def select_file(target):
     filetypes = (
@@ -97,6 +98,8 @@ def ocolitMoRong(ri, ri1):
         t[i] = t[i - 2] - q[i - 1] * t[i - 1]
         return t[i] if t[i]>0 else (n+t[i])
 
+def stringToInteger(string):
+    return int(hashlib.sha256(string.encode('utf-8')).hexdigest(), 16)
 
 def set_up():
     global p, alpha, a, beta, k, en_msg, y1, doc
@@ -121,22 +124,49 @@ def sign(msg):
                 tmp+=(p-1)
             y2=tmp*t%(p-1)
             en_msg.append(y2)
-    encry_msg = ""
+    # encry_msg = ""
+    x=""
     for i in range(0, len(en_msg)-1):
-            encry_msg+=hex(en_msg[i])
-    return encry_msg
-
+        # encry_msg+=hex(en_msg[i])
+        if(i<len(en_msg)-2):
+          x+=hashlib.sha256(chr(en_msg[i]).encode('utf-8')).hexdigest()+'v'
+        else:
+          x+= hashlib.sha256(chr(en_msg[i]).encode('utf-8')).hexdigest()
+    return x
 def check(msg, y2):
-    y3=y2.split("0x")
-    while (len(y3)>0 and y3[0]==''):
-        y3.pop(0)
-    while (len(y3)>0 and y3[len(y3)-1]==0):
-        y3.pop(len(y3)-1)
-    if(len(y3)!=len(msg)):
+    # y3=y2.split("0x")
+    # while (len(y3)>0 and y3[0]==''):
+    #     y3.pop(0)
+    # while (len(y3)>0 and y3[len(y3)-1]==0):
+    #     y3.pop(len(y3)-1)
+    # if(len(y3)!=len(msg)):
+    #     return False
+    # isOk=True
+    # for i in range(0, len(y3)):
+    #         if(y3[i]==''):
+    #             isOk=False
+    #             break
+    #         tmp = stringToInteger(y3[i])
+    #         check=((binhPhuongVaNhan(beta, y1, p))*(binhPhuongVaNhan(y1, int(y3[i], 16), p)))%p
+    #         if(check!=binhPhuongVaNhan(alpha, ord(msg[i]), p)):
+    #            isOk=False
+    #            break
+    y4 = y2.split('v')
+    if(len(y4)!=len(msg)):
         return False
     isOk=True
-    for i in range(0, len(y3)):
-            tmp=int(y3[i], 16)
+    for i in range(0, len(y4)):
+            if(y4[i]==''):
+                isOk=False
+                break
+            tmp = -1
+            for j in range(0, 50000):
+                if hashlib.sha256(chr(j).encode('utf-8')).hexdigest()==y4[i]:
+                    tmp=j
+                    break
+            if tmp == -1 :
+                isOk=False
+                break
             check=((binhPhuongVaNhan(beta, y1, p))*(binhPhuongVaNhan(y1, tmp, p)))%p
             if(check!=binhPhuongVaNhan(alpha, ord(msg[i]), p)):
                isOk=False
